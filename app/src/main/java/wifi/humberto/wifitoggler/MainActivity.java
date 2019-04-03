@@ -1,19 +1,15 @@
 package wifi.humberto.wifitoggler;
 
-import android.app.NotificationManager;
+import android.app.Notification;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.net.wifi.WifiManager;
 import android.content.Context;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.util.Calendar;
-
-import static android.R.attr.id;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     Thread thread = null;
     boolean keepRunning = true;
     boolean threadIsRunning = false;
+    private NotificationUtils mNotificationUtils;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         context = getApplicationContext();
         wifi = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        mNotificationUtils = new NotificationUtils(this);
     }
 
     public void buttonClicked(View view)
@@ -70,23 +68,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public Notification.Builder getChannelNotification(String title, String body) {
+        return new Notification.Builder(getApplicationContext(), NotificationUtils.ANDROID_CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setSmallIcon(R.drawable.icon_small);
+    }
+
+
     void manageNotification()
     {
-
-        final NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setContentTitle("Toggling in progress")
-                        .setContentText("Progress")
-                        .setSmallIcon(R.drawable.icon_small);
-                       // .setCategory(Notification.CATEGORY_PROGRESS);
-
-        final NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        final Notification.Builder mBuilder = getChannelNotification("Toggling in progress", "Progress");
 
 
         mBuilder.setOngoing(true); // persistent
         // mId allows you to update the notification later on.
-        mNotificationManager.notify(1, mBuilder.build());
+        mNotificationUtils.getManager().notify(1, mBuilder.build());
 
         //// TODO: 2/27/2017 migrate to TimerTask?
         thread =  new Thread(
@@ -175,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
                             mBuilder.setContentText("Progress "+ percent +"%");
                             mBuilder.setProgress(100, percent, false);
                             // Displays the progress bar for the first time.
-                            mNotificationManager.notify(1, mBuilder.build());
+                            mNotificationUtils.getManager().notify(1, mBuilder.build());
                             // Sleeps the thread, simulating an operation
                             // that takes time
                             try {
@@ -192,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
                         mBuilder.setContentText("Toggling complete")
                                 // Removes the progress bar
                                 .setProgress(0,0,false);
-                        mNotificationManager.notify(1, mBuilder.build());
+                        mNotificationUtils.getManager().notify(1, mBuilder.build());
                         threadIsRunning = false;
                     }
                 }
